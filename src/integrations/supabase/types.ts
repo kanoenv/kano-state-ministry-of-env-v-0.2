@@ -7,7 +7,7 @@ export type Json =
   | Json[]
 
 export type Database = {
-  // Allows to automatically instanciate createClient with right options
+  // Allows to automatically instantiate createClient with right options
   // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
   __InternalSupabase: {
     PostgrestVersion: "12.2.3 (519615d)"
@@ -783,6 +783,68 @@ export type Database = {
           },
         ]
       }
+      tree_organizations: {
+        Row: {
+          address: string
+          approved_at: string | null
+          approved_by: string | null
+          contact_person: string
+          created_at: string | null
+          email: string
+          id: string
+          login_code: string
+          organization_name: string
+          password_hash: string
+          phone_number: string
+          seeds_allocated: number | null
+          seeds_planted: number | null
+          status: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          address: string
+          approved_at?: string | null
+          approved_by?: string | null
+          contact_person: string
+          created_at?: string | null
+          email: string
+          id?: string
+          login_code: string
+          organization_name: string
+          password_hash: string
+          phone_number: string
+          seeds_allocated?: number | null
+          seeds_planted?: number | null
+          status?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          address?: string
+          approved_at?: string | null
+          approved_by?: string | null
+          contact_person?: string
+          created_at?: string | null
+          email?: string
+          id?: string
+          login_code?: string
+          organization_name?: string
+          password_hash?: string
+          phone_number?: string
+          seeds_allocated?: number | null
+          seeds_planted?: number | null
+          status?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "tree_organizations_approved_by_fkey"
+            columns: ["approved_by"]
+            isOneToOne: false
+            referencedRelation: "admin_users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       tree_planters: {
         Row: {
           activation_code: string
@@ -823,6 +885,135 @@ export type Database = {
             columns: ["organization_id"]
             isOneToOne: false
             referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      tree_planters_new: {
+        Row: {
+          created_at: string | null
+          email: string
+          id: string
+          is_active: boolean | null
+          login_code: string
+          name: string
+          organization_id: string | null
+          password_hash: string
+          phone_number: string
+          trees_planted: number | null
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          email: string
+          id?: string
+          is_active?: boolean | null
+          login_code: string
+          name: string
+          organization_id?: string | null
+          password_hash: string
+          phone_number: string
+          trees_planted?: number | null
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          email?: string
+          id?: string
+          is_active?: boolean | null
+          login_code?: string
+          name?: string
+          organization_id?: string | null
+          password_hash?: string
+          phone_number?: string
+          trees_planted?: number | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "tree_planters_new_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "tree_organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      tree_planting_records: {
+        Row: {
+          created_at: string | null
+          id: string
+          latitude: number | null
+          location_description: string | null
+          longitude: number | null
+          notes: string | null
+          organization_id: string | null
+          photos: Json | null
+          planter_id: string | null
+          planting_date: string
+          species: string
+          trees_count: number
+          updated_at: string | null
+          verified: boolean | null
+          verified_at: string | null
+          verified_by: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          latitude?: number | null
+          location_description?: string | null
+          longitude?: number | null
+          notes?: string | null
+          organization_id?: string | null
+          photos?: Json | null
+          planter_id?: string | null
+          planting_date?: string
+          species: string
+          trees_count: number
+          updated_at?: string | null
+          verified?: boolean | null
+          verified_at?: string | null
+          verified_by?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          latitude?: number | null
+          location_description?: string | null
+          longitude?: number | null
+          notes?: string | null
+          organization_id?: string | null
+          photos?: Json | null
+          planter_id?: string | null
+          planting_date?: string
+          species?: string
+          trees_count?: number
+          updated_at?: string | null
+          verified?: boolean | null
+          verified_at?: string | null
+          verified_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "tree_planting_records_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "tree_organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tree_planting_records_planter_id_fkey"
+            columns: ["planter_id"]
+            isOneToOne: false
+            referencedRelation: "tree_planters_new"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tree_planting_records_verified_by_fkey"
+            columns: ["verified_by"]
+            isOneToOne: false
+            referencedRelation: "admin_users"
             referencedColumns: ["id"]
           },
         ]
@@ -946,38 +1137,97 @@ export type Database = {
       create_admin_user: {
         Args: {
           admin_email: string
-          admin_password: string
           admin_name: string
+          admin_password: string
           admin_role_param?: Database["public"]["Enums"]["admin_role"]
         }
         Returns: string
+      }
+      create_planter_for_org: {
+        Args: {
+          org_id: string
+          plain_password: string
+          planter_email: string
+          planter_name: string
+          planter_phone: string
+        }
+        Returns: {
+          login_code: string
+          planter_id: string
+        }[]
       }
       generate_activation_code: {
         Args: { prefix?: string }
         Returns: string
       }
+      generate_login_code: {
+        Args: Record<PropertyKey, never>
+        Returns: string
+      }
       update_organization_password: {
-        Args: { org_email: string; old_password: string; new_password: string }
+        Args: { new_password: string; old_password: string; org_email: string }
         Returns: boolean
       }
       verify_admin_login: {
         Args: { admin_email: string; admin_password: string }
         Returns: {
-          id: string
           email: string
           full_name: string
-          role: Database["public"]["Enums"]["admin_role"]
+          id: string
           is_active: boolean
+          role: Database["public"]["Enums"]["admin_role"]
         }[]
       }
       verify_organization_login: {
         Args: { org_email: string; org_password: string }
         Returns: {
+          approved_at: string
+          contact_email: string
           id: string
           organization_name: string
-          contact_email: string
           status: string
-          approved_at: string
+        }[]
+      }
+      verify_tree_organization_email_login: {
+        Args: { org_email: string }
+        Returns: {
+          email: string
+          id: string
+          login_code: string
+          organization_name: string
+          seeds_allocated: number
+          seeds_planted: number
+        }[]
+      }
+      verify_tree_organization_login: {
+        Args: { org_email: string; org_password: string }
+        Returns: {
+          email: string
+          id: string
+          login_code: string
+          organization_name: string
+          seeds_allocated: number
+          seeds_planted: number
+        }[]
+      }
+      verify_tree_planter_email_login: {
+        Args: { planter_email: string }
+        Returns: {
+          email: string
+          id: string
+          name: string
+          organization_id: string
+          trees_planted: number
+        }[]
+      }
+      verify_tree_planter_login: {
+        Args: { planter_email: string; planter_password: string }
+        Returns: {
+          email: string
+          id: string
+          name: string
+          organization_id: string
+          trees_planted: number
         }[]
       }
     }
