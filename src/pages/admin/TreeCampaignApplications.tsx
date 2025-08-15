@@ -153,7 +153,7 @@ const TreeCampaignApplications = () => {
     setIsStatusDialogOpen(true);
   };
   
-  // Save updated status
+  // Save updated status and create tree organization if approved
   const saveStatusChange = async () => {
     if (!selectedApplication || !newStatus) return;
     
@@ -167,6 +167,42 @@ const TreeCampaignApplications = () => {
         .eq('id', selectedApplication.id);
         
       if (error) throw error;
+      
+      // If approved, create tree organization entry
+      if (newStatus === 'Approved') {
+        // Generate login code using simple approach
+        const generatedCode = 'TREE' + Math.random().toString(36).substring(2, 8).toUpperCase();
+        
+        const { error: orgError } = await supabase
+          .from('tree_organizations')
+          .insert({
+            organization_name: selectedApplication.organization_name,
+            email: selectedApplication.contact_email,
+            address: selectedApplication.address,
+            phone_number: selectedApplication.contact_phone,
+            contact_person: selectedApplication.contact_name,
+            password_hash: '$2b$12$defaulthash', // Temporary hash, will be updated on first login
+            login_code: generatedCode,
+            seeds_allocated: selectedApplication.seedlings_requested,
+            status: 'approved',
+            approved_at: new Date().toISOString(),
+            approved_by: 'admin' // Should be current admin ID in real implementation
+          });
+          
+        if (orgError) {
+          console.error('Error creating tree organization:', orgError);
+          toast({
+            variant: 'destructive',
+            title: 'Warning',
+            description: 'Application approved but failed to create organization entry',
+          });
+        } else {
+          toast({
+            title: 'Organization Created',
+            description: `Organization created with login code: ${generatedCode}. They can now access the tree tracker.`,
+          });
+        }
+      }
       
       // Update local state
       const updatedApplications = applications.map(app => 
