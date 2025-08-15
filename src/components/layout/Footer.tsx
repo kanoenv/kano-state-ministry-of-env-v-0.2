@@ -120,6 +120,12 @@ const Footer = () => {
                   <span>Climate-Actor Registry</span>
                 </Link>
               </li>
+              <li>
+                <Link to="/tree-planting-tracker" className="flex items-center text-slate-300 hover:text-emerald-400 transition-colors group">
+                  <TreeDeciduous size={16} className="mr-3 group-hover:scale-110 transition-transform" />
+                  <span>Tree Planting Tracker</span>
+                </Link>
+              </li>
             </ul>
           </div>
 
