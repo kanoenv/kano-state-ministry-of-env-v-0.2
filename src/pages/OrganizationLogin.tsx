@@ -5,20 +5,26 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Badge } from "@/components/ui/badge";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
-import { Eye, EyeOff } from "lucide-react";
+import { Eye, EyeOff, User, Building2, Calendar, Shield } from "lucide-react";
 import orgLoginBg from "@/assets/org-login-bg.jpg";
+import PasswordUpdateForm from "@/components/forms/PasswordUpdateForm";
 
 const OrganizationLogin = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+  const [activeTab, setActiveTab] = useState('login');
+  const [orgDetails, setOrgDetails] = useState<any>(null);
   const [formData, setFormData] = useState({
     email: '',
     password: ''
   });
+  const [updateEmail, setUpdateEmail] = useState('');
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -88,6 +94,67 @@ const OrganizationLogin = () => {
     }
   };
 
+  const handleFindOrganization = async () => {
+    if (!updateEmail.trim()) {
+      toast({
+        title: "Error",
+        description: "Please enter your email address",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const { data, error } = await supabase
+        .from('climate_actors')
+        .select('*')
+        .eq('contact_email', updateEmail)
+        .eq('status', 'approved')
+        .maybeSingle();
+
+      if (error || !data) {
+        toast({
+          title: "Organization Not Found",
+          description: "No approved organization found with this email address",
+          variant: "destructive"
+        });
+        return;
+      }
+
+      setOrgDetails(data);
+      toast({
+        title: "Organization Found",
+        description: "Organization details loaded. You can now update your password.",
+      });
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: "Failed to find organization",
+        variant: "destructive"
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handlePasswordUpdateSuccess = (orgData: any) => {
+    // Store the organization data and redirect to dashboard
+    localStorage.setItem('organizationAuth', JSON.stringify({
+      id: orgData.id,
+      organization_name: orgData.organization_name,
+      contact_email: orgData.contact_email,
+      status: orgData.status,
+      approved_at: orgData.approved_at
+    }));
+    
+    navigate('/organization-dashboard');
+    toast({
+      title: "Password Updated & Login Successful",
+      description: `Welcome, ${orgData.organization_name}!`,
+    });
+  };
+
   return (
     <div 
       className="min-h-screen relative flex items-center justify-center"
@@ -122,72 +189,151 @@ const OrganizationLogin = () => {
           </div>
 
           <Card className="bg-white/95 backdrop-blur-sm shadow-2xl border-0">
-            <CardHeader className="text-center pb-6">
-              <CardTitle className="text-2xl font-bold text-foreground">Welcome Back</CardTitle>
-              <CardDescription className="text-muted-foreground">
-                Enter your credentials to access your organization dashboard
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="px-8 pb-8">
-              <form onSubmit={handleSubmit} className="space-y-5">
-                <div className="space-y-2">
-                  <Label htmlFor="email" className="text-foreground font-medium">Email Address</Label>
-                  <Input 
-                    id="email"
-                    type="email"
-                    value={formData.email}
-                    onChange={(e) => setFormData(prev => ({ ...prev, email: e.target.value }))}
-                    placeholder="your.email@organization.com"
-                    required
-                    className="h-12 bg-background/50 border-border/50 focus:border-primary focus:ring-primary/20"
-                  />
-                </div>
+            <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+              <TabsList className="grid w-full grid-cols-2 mb-6">
+                <TabsTrigger value="login" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
+                  Login
+                </TabsTrigger>
+                <TabsTrigger value="update-password" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
+                  Update Password
+                </TabsTrigger>
+              </TabsList>
 
-                <div className="space-y-2">
-                  <Label htmlFor="password" className="text-foreground font-medium">Password</Label>
-                  <div className="relative">
-                    <Input 
-                      id="password"
-                      type={showPassword ? "text" : "password"}
-                      value={formData.password}
-                      onChange={(e) => setFormData(prev => ({ ...prev, password: e.target.value }))}
-                      required
-                      className="h-12 bg-background/50 border-border/50 focus:border-primary focus:ring-primary/20 pr-12"
-                    />
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="sm"
-                      className="absolute right-1 top-1 h-10 w-10 p-0 hover:bg-transparent"
-                      onClick={() => setShowPassword(!showPassword)}
+              <TabsContent value="login">
+                <CardHeader className="text-center pb-6">
+                  <CardTitle className="text-2xl font-bold text-foreground">Welcome Back</CardTitle>
+                  <CardDescription className="text-muted-foreground">
+                    Enter your credentials to access your organization dashboard
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="px-8 pb-8">
+                  <form onSubmit={handleSubmit} className="space-y-5">
+                    <div className="space-y-2">
+                      <Label htmlFor="email" className="text-foreground font-medium">Email Address</Label>
+                      <Input 
+                        id="email"
+                        type="email"
+                        value={formData.email}
+                        onChange={(e) => setFormData(prev => ({ ...prev, email: e.target.value }))}
+                        placeholder="your.email@organization.com"
+                        required
+                        className="h-12 bg-background/50 border-border/50 focus:border-primary focus:ring-primary/20"
+                      />
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label htmlFor="password" className="text-foreground font-medium">Password</Label>
+                      <div className="relative">
+                        <Input 
+                          id="password"
+                          type={showPassword ? "text" : "password"}
+                          value={formData.password}
+                          onChange={(e) => setFormData(prev => ({ ...prev, password: e.target.value }))}
+                          required
+                          className="h-12 bg-background/50 border-border/50 focus:border-primary focus:ring-primary/20 pr-12"
+                        />
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          className="absolute right-1 top-1 h-10 w-10 p-0 hover:bg-transparent"
+                          onClick={() => setShowPassword(!showPassword)}
+                        >
+                          {showPassword ? <EyeOff className="h-4 w-4 text-muted-foreground" /> : <Eye className="h-4 w-4 text-muted-foreground" />}
+                        </Button>
+                      </div>
+                    </div>
+
+                    <Button 
+                      type="submit" 
+                      className="w-full h-12 bg-gradient-to-r from-primary to-secondary hover:from-primary/90 hover:to-secondary/90 text-primary-foreground font-semibold rounded-xl shadow-lg transition-all duration-300" 
+                      disabled={loading}
                     >
-                      {showPassword ? <EyeOff className="h-4 w-4 text-muted-foreground" /> : <Eye className="h-4 w-4 text-muted-foreground" />}
+                      {loading ? 'Signing In...' : 'Access Dashboard'}
                     </Button>
+                  </form>
+
+                  <div className="mt-6 text-center">
+                    <p className="text-sm text-muted-foreground">
+                      Don't have an account?{' '}
+                      <Button 
+                        variant="link" 
+                        className="p-0 h-auto font-medium text-primary hover:text-primary/80"
+                        onClick={() => navigate('/climate-actor-register')}
+                      >
+                        Register your organization
+                      </Button>
+                    </p>
                   </div>
-                </div>
+                </CardContent>
+              </TabsContent>
 
-                <Button 
-                  type="submit" 
-                  className="w-full h-12 bg-gradient-to-r from-primary to-secondary hover:from-primary/90 hover:to-secondary/90 text-primary-foreground font-semibold rounded-xl shadow-lg transition-all duration-300" 
-                  disabled={loading}
-                >
-                  {loading ? 'Signing In...' : 'Access Dashboard'}
-                </Button>
-              </form>
-
-              <div className="mt-6 text-center">
-                <p className="text-sm text-muted-foreground">
-                  Don't have an account?{' '}
-                  <Button 
-                    variant="link" 
-                    className="p-0 h-auto font-medium text-primary hover:text-primary/80"
-                    onClick={() => navigate('/climate-actor-register')}
-                  >
-                    Register your organization
-                  </Button>
-                </p>
-              </div>
-            </CardContent>
+              <TabsContent value="update-password">
+                <CardHeader className="text-center pb-6">
+                  <CardTitle className="text-2xl font-bold text-foreground">Update Password</CardTitle>
+                  <CardDescription className="text-muted-foreground">
+                    Find your organization and update your password
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="px-8 pb-8">
+                  {!orgDetails ? (
+                    <div className="space-y-5">
+                      <div className="space-y-2">
+                        <Label htmlFor="updateEmail" className="text-foreground font-medium">Organization Email</Label>
+                        <Input 
+                          id="updateEmail"
+                          type="email"
+                          value={updateEmail}
+                          onChange={(e) => setUpdateEmail(e.target.value)}
+                          placeholder="your.email@organization.com"
+                          className="h-12 bg-background/50 border-border/50 focus:border-primary focus:ring-primary/20"
+                        />
+                      </div>
+                      <Button 
+                        onClick={handleFindOrganization}
+                        className="w-full h-12 bg-gradient-to-r from-primary to-secondary hover:from-primary/90 hover:to-secondary/90 text-primary-foreground font-semibold rounded-xl shadow-lg transition-all duration-300" 
+                        disabled={loading}
+                      >
+                        {loading ? 'Searching...' : 'Find Organization'}
+                      </Button>
+                    </div>
+                  ) : (
+                    <div className="space-y-6">
+                      <div className="bg-muted/50 rounded-lg p-4 space-y-3">
+                        <div className="flex items-center justify-between">
+                          <h3 className="font-semibold text-lg flex items-center gap-2">
+                            <Building2 className="h-5 w-5 text-primary" />
+                            {orgDetails.organization_name}
+                          </h3>
+                          <Badge className="bg-green-100 text-green-800">
+                            <Shield className="h-3 w-3 mr-1" />
+                            Approved
+                          </Badge>
+                        </div>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+                          <div className="flex items-center gap-2">
+                            <User className="h-4 w-4 text-muted-foreground" />
+                            <span>Contact: {orgDetails.contact_name}</span>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <Calendar className="h-4 w-4 text-muted-foreground" />
+                            <span>Type: {orgDetails.actor_type === 'state_actor' ? 'State Actor' : 'Non-State Actor'}</span>
+                          </div>
+                        </div>
+                        <p className="text-sm text-muted-foreground">
+                          {orgDetails.description}
+                        </p>
+                      </div>
+                      
+                      <PasswordUpdateForm 
+                        organizationEmail={orgDetails.contact_email}
+                        onPasswordUpdateSuccess={() => handlePasswordUpdateSuccess(orgDetails)}
+                      />
+                    </div>
+                  )}
+                </CardContent>
+              </TabsContent>
+            </Tabs>
           </Card>
           
           {/* Footer */}
