@@ -10,9 +10,10 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 
 interface PasswordUpdateFormProps {
   organizationEmail: string;
+  onPasswordUpdateSuccess?: (orgData: any) => void;
 }
 
-const PasswordUpdateForm: React.FC<PasswordUpdateFormProps> = ({ organizationEmail }) => {
+const PasswordUpdateForm: React.FC<PasswordUpdateFormProps> = ({ organizationEmail, onPasswordUpdateSuccess }) => {
   const { toast } = useToast();
   const [loading, setLoading] = useState(false);
   const [showPasswords, setShowPasswords] = useState({
@@ -63,7 +64,9 @@ const PasswordUpdateForm: React.FC<PasswordUpdateFormProps> = ({ organizationEma
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
-
+    console.log('Starting password update for:', organizationEmail);
+    console.log('Form data:', { currentPassword: '***', newPassword: '***', confirmPassword: '***' });
+    
     try {
       // Validate form
       if (!formData.currentPassword || !formData.newPassword || !formData.confirmPassword) {
@@ -83,13 +86,17 @@ const PasswordUpdateForm: React.FC<PasswordUpdateFormProps> = ({ organizationEma
       }
 
       // Update password using the database function
+      console.log('Calling update_organization_password RPC function...');
       const { data, error } = await supabase.rpc('update_organization_password', {
         org_email: organizationEmail,
         old_password: formData.currentPassword,
         new_password: formData.newPassword
       });
 
+      console.log('RPC Response:', { data, error });
+
       if (error) {
+        console.error('RPC Error:', error);
         throw error;
       }
 
@@ -105,8 +112,27 @@ const PasswordUpdateForm: React.FC<PasswordUpdateFormProps> = ({ organizationEma
         description: "Your password has been successfully updated.",
       });
 
+      // Get organization data and call success callback if provided
+      if (onPasswordUpdateSuccess) {
+        const { data: orgData } = await supabase
+          .from('climate_actors')
+          .select('*')
+          .eq('contact_email', organizationEmail)
+          .single();
+        
+        if (orgData) {
+          onPasswordUpdateSuccess(orgData);
+        }
+      }
+
     } catch (error: any) {
       console.error('Password update error:', error);
+      console.error('Error details:', {
+        message: error.message,
+        code: error.code,
+        details: error.details,
+        hint: error.hint
+      });
       toast({
         title: "Update Failed",
         description: error.message || 'Failed to update password',
