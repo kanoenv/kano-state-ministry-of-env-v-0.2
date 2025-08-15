@@ -4,6 +4,7 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import React, { Suspense } from "react";
 import ScrollToTop from "./components/layout/ScrollToTop";
 import ErrorBoundary from "./components/layout/ErrorBoundary";
 import CatchAllRoute from "./components/routing/CatchAllRoute";
@@ -76,6 +77,10 @@ import Accessibility from "./pages/Accessibility";
 import AdminSetup from "./pages/AdminSetup";
 import ForestGuardApplications from "./pages/admin/ForestGuardApplications";
 import TreePlantingTracker from "./pages/admin/TreePlantingTracker";
+import TreePlantingManagement from "./pages/admin/TreePlantingManagement";
+import TreePlantingLogin from "./pages/TreePlantingLogin";
+import OrganizationTreeDashboard from "./pages/OrganizationTreeDashboard";
+import PlanterDashboard from "./pages/PlanterDashboard";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -165,6 +170,12 @@ const AppRoutes = () => {
         <Route path="/organization-login" element={<OrganizationLogin />} />
         <Route path="/organization-dashboard" element={<OrganizationDashboard />} />
         
+        {/* Tree Planting System Routes */}
+        <Route path="/tree-planting-tracker" element={<TreePlantingTracker />} />
+        <Route path="/tree-planting-login" element={<TreePlantingLogin />} />
+        <Route path="/organization-tree-dashboard" element={<OrganizationTreeDashboard />} />
+        <Route path="/planter-dashboard" element={<PlanterDashboard />} />
+        
         {/* Air Quality Route - NEW */}
         <Route path="/air-quality" element={<AirQuality />} />
         
@@ -219,6 +230,12 @@ const AppRoutes = () => {
         <Route path="/admin/tree-campaign" element={<ProtectedRoute><TreeCampaignApplications /></ProtectedRoute>} />
         <Route path="/admin/forest-guard-applications" element={<ProtectedRoute><ForestGuardApplications /></ProtectedRoute>} />
         <Route path="/admin/tree-planting-tracker" element={<ProtectedRoute><TreePlantingTracker /></ProtectedRoute>} />
+        <Route path="/admin/tree-planting-management" element={<ProtectedRoute><TreePlantingManagement /></ProtectedRoute>} />
+        <Route path="/admin/tree-planting-combined" element={<ProtectedRoute>
+          <Suspense fallback={<div>Loading...</div>}>
+            {React.createElement(React.lazy(() => import('./pages/admin/TreePlantingCombined')))}
+          </Suspense>
+        </ProtectedRoute>} />
         <Route path="/admin/users" element={<ProtectedRoute><AdminManagement /></ProtectedRoute>} />
         <Route path="/admin/pdfs" element={<ProtectedRoute><PdfManagementPage /></ProtectedRoute>} />
         <Route path="/admin/climate-actors" element={<ProtectedRoute><ClimateActorManagement /></ProtectedRoute>} />
