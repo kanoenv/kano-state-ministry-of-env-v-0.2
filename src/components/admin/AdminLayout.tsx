@@ -125,11 +125,11 @@ const AdminSidebar = () => {
       category: 'main'
     },
     { 
-      path: '/admin/tree-planting-tracker', 
-      label: 'Tree Planting Tracker', 
+      path: '/admin/tree-planting-combined', 
+      label: 'Five Million Trees', 
       icon: TreePine,
-      description: 'Monitor tree planting',
-      category: 'monitoring'
+      description: 'Campaign & tracker',
+      category: 'main'
     },
     { 
       path: '/admin/air-quality', 
